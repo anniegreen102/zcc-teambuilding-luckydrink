@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍺 Drinking Game Wheel 🍻</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            transition: background 0.5s ease;
+        }
+
+        body.loser-mode {
+            background: linear-gradient(135deg, #1a0000 0%, #2e1a1a 50%, #3e1616 100%);
+        }
+
+        body.loser-mode .panel {
+            border-color: #ff4444;
+        }
+
+        body.loser-mode h1 {
+            color: #ff4444;
+        }
+
+        body.loser-mode .mode-btn.active {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.2);
+        }
+
+        body.loser-mode .spin-btn {
+            background: linear-gradient(45deg, #ff4444, #ff6b6b);
+        }
+
+        body.winner-mode {
+            background: linear-gradient(135deg, #001a00 0%, #1a2e1a 50%, #163e16 100%);
+        }
+
+        body.winner-mode .panel {
+            border-color: #00ff00;
+        }
+
+        body.winner-mode h1 {
+            color: #00ff00;
+        }
+
+        body.winner-mode .mode-btn.active {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.2);
+        }
+
+        body.winner-mode .spin-btn {
+            background: linear-gradient(45deg, #00cc00, #00ff00);
+        }
+
+        /* Animated background bubbles */
+        .bubbles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: rise 10s infinite linear;
+        }
+
+        .bubble:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .bubble:nth-child(2) { left: 20%; animation-delay: 2s; }
+        .bubble:nth-child(3) { left: 30%; animation-delay: 4s; }
+        .bubble:nth-child(4) { left: 40%; animation-delay: 6s; }
+        .bubble:nth-child(5) { left: 50%; animation-delay: 8s; }
+        .bubble:nth-child(6) { left: 60%; animation-delay: 3s; }
+        .bubble:nth-child(7) { left: 70%; animation-delay: 5s; }
+        .bubble:nth-child(8) { left: 80%; animation-delay: 7s; }
+        .bubble:nth-child(9) { left: 90%; animation-delay: 9s; }
+
+        @keyframes rise {
+            to {
+                bottom: 100vh;
+                transform: translateX(-100px);
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #666;
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+        }
+
+        .reset-btn-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+        }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .results-boards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+        }
+
+        .board {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .winners-board {
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .losers-board {
+            border: 2px solid #ff4444;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+        }
+
+        .board h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .winners-board h4 {
+            color: #00ff00;
+        }
+
+        .losers-board h4 {
+            color: #ff4444;
+        }
+
+        .board-content {
+            font-size: 11px;
+            line-height: 1.3;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .board-item {
+            padding: 2px 5px;
+            margin: 2px 0;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .input-section h3,
+        .results-section h3 {
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #666;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 10px;
+            font-size: 14px;
+            resize: none;
+        }
+
+        textarea::placeholder {
+            color: #888;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-row.full-width {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        label {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #666;
+            border-radius: 5px;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #666;
+            border-radius: 20px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            border-color: #ffffff;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+        }
+
+        #wheelCanvas {
+            border-radius: 50%;
+            transition: filter 0.3s ease;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 35px solid #ff6b6b;
+            z-index: 10;
+        }
+
+        .spin-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .spin-btn:hover {
+            transform: scale(1.02);
+            background: linear-gradient(45deg, #5a9ff2, #4586c9);
+        }
+
+        .spin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            border: 2px solid #ff6b6b;
+            border-radius: 20px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.02);
+            background: linear-gradient(45deg, #ff7b7b, #ff9e9e);
+        }
+
+        .results-list {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .winner-item {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .loser-item {
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Result Pop-up */
+        .result-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .popup-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            animation: popupAppear 0.5s ease-out;
+        }
+
+        .popup-content.winner {
+            border-color: #00ff00;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.5);
+        }
+
+        .popup-content.loser {
+            border-color: #ff4444;
+            box-shadow: 0 0 50px rgba(255, 68, 68, 0.5);
+        }
+
+        .popup-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .popup-title.winner {
+            color: #00ff00;
+            text-shadow: 0 0 30px #00ff00;
+        }
+
+        .popup-title.loser {
+            color: #ff4444;
+            text-shadow: 0 0 30px #ff4444;
+        }
+
+        .popup-names {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .popup-prize {
+            font-size: 1.2em;
+            color: #ffd700;
+            text-shadow: 0 0 15px #ffd700;
+            margin-bottom: 20px;
+        }
+
+        .close-popup-btn {
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-popup-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #5a9ff2, #4586c9);
+        }
+
+        @keyframes popupAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Confetti and Balloons Animation */
+        .confetti, .balloon {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .confetti {
+            width: 10px;
+            height: 10px;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            from {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .balloon {
+            font-size: 40px;
+            animation: balloonFloat 4s ease-out forwards;
+        }
+
+        @keyframes balloonFloat {
+            from {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-100vh) rotate(20deg);
+                opacity: 0;
+            }
+        }
+
+        /* Special 1st Prize Popup */
+        .popup-content.grand-prize {
+            border: 5px solid #ffd700;
+            box-shadow: 0 0 80px rgba(255, 215, 0, 0.8);
+            animation: grandPrizeAppear 1s ease-out, grandPrizePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes grandPrizeAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0) rotate(-180deg);
+            }
+            50% {
+                transform: scale(1.2) rotate(10deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes grandPrizePulse {
+            0%, 100% {
+                box-shadow: 0 0 80px rgba(255, 215, 0, 0.8);
+            }
+            50% {
+                box-shadow: 0 0 120px rgba(255, 215, 0, 1);
+            }
+        }
+
+        .popup-names.grand-prize {
+            font-size: 3em;
+            background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: grandPrizeTextGlow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes grandPrizeTextGlow {
+            0%, 100% {
+                filter: drop-shadow(0 0 10px #ffd700);
+            }
+            50% {
+                filter: drop-shadow(0 0 30px #ffd700);
+            }
+        }
+
+        .popup-prize.grand-prize {
+            font-size: 1.8em;
+            animation: prizeShine 2s ease-in-out infinite;
+        }
+
+        @keyframes prizeShine {
+            0%, 100% {
+                text-shadow: 0 0 15px #ffd700, 0 0 30px #ffd700;
+            }
+            50% {
+                text-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700, 0 0 90px #ffd700;
+            }
+        }
+
+        @keyframes celebrate {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        @keyframes eliminate {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(0.5) rotate(180deg); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+        }
+
+        .round-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid #666;
+        }
+
+        .prize-info {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #666;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <div class="container">
+        <div class="panel left-panel">
+            <div class="input-section">
+                <h3>🍺 Participants</h3>
+                <textarea id="participantInput" placeholder="Enter participant names (one per line)&#10;Example:&#10;John&#10;Sarah&#10;Mike&#10;Emma"></textarea>
+            </div>
+            
+            <div class="controls">
+                <div class="control-row">
+                    <label>Select:</label>
+                    <input type="number" id="selectCount" value="1" min="1">
+                    <span>per round</span>
+                </div>
+                
+                <div class="control-row full-width">
+                    <label style="margin-bottom: 5px;">Mode:</label>
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" data-mode="loser">🚫 Loser</button>
+                        <button class="mode-btn" data-mode="winner">🏆 Winner</button>
+                    </div>
+                    
+                    <button class="spin-btn" id="spinBtn" onclick="spinWheel()">🎲 SPIN THE WHEEL!</button>
+                </div>
+            </div>
+            
+            <div class="reset-btn-container">
+                <button class="reset-btn" onclick="resetGame()">🔄 Reset Game</button>
+            </div>
+        </div>
+
+        <div class="panel center-panel">
+            <h1>🍻 Drinking Wheel 🍺</h1>
+            
+            <div class="round-info" id="roundInfo">
+                <div>Round <span id="currentRound">1</span></div>
+                <div class="prize-info" id="prizeInfo">Elimination Round</div>
+            </div>
+            
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheelCanvas" width="500" height="500"></canvas>
+            </div>
+        </div>
+
+        <div class="panel right-panel">
+            <div class="results-boards">
+                <div class="board winners-board">
+                    <h4>🏆 WINNERS (<span id="winnerCount">0</span>)</h4>
+                    <div class="board-content" id="winnersBoard"></div>
+                </div>
+                <div class="board losers-board">
+                    <h4>💀 ELIMINATED (<span id="loserCount">0</span>)</h4>
+                    <div class="board-content" id="losersBoard"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let participants = [];
+        let currentMode = 'loser';
+        let currentRound = 1;
+        let isSpinning = false;
+        let selectedResults = [];
+        let currentRotation = 0;
+        let animationFrame = null;
+
+        const prizes = {
+            4: { name: '5th Prize Winner', prize: '100k ZaloPay' },
+            5: { name: '4th Prize Winner', prize: 'Sạc dự phòng' },
+            6: { name: '3rd Prize Winner', prize: 'Máy lọc không khí' },
+            7: { name: '1st Prize Winner', prize: 'AirPod 4' }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateModeButtons();
+            updateRoundInfo();
+            
+            // Mode toggle functionality
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentMode = this.dataset.mode;
+                    updateModeButtons();
+                });
+            });
+
+            // Auto-update participants when input changes
+            document.getElementById('participantInput').addEventListener('input', function() {
+                updateParticipants();
+            });
+
+            // Update select count
+            document.getElementById('selectCount').addEventListener('change', function() {
+                const maxSelect = Math.min(participants.length, parseInt(this.value) || 1);
+                this.value = maxSelect;
+            });
+        });
+
+        function updateModeButtons() {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === currentMode);
+            });
+            
+            // Update body class for color theme
+            document.body.classList.remove('loser-mode', 'winner-mode');
+            if (currentMode === 'loser') {
+                document.body.classList.add('loser-mode');
+            } else if (currentMode === 'winner') {
+                document.body.classList.add('winner-mode');
+            }
+        }
+
+        function updateParticipants() {
+            const input = document.getElementById('participantInput').value;
+            participants = input.split('\n').filter(name => name.trim() !== '').map(name => name.trim());
+            updateWheel();
+            
+            // Update max select count
+            const selectInput = document.getElementById('selectCount');
+            const maxSelect = Math.max(1, participants.length);
+            selectInput.max = maxSelect;
+            if (parseInt(selectInput.value) > maxSelect) {
+                selectInput.value = maxSelect;
+            }
+        }
+
+        function drawWheel(rotation) {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 220;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (participants.length === 0) {
+                // Empty wheel
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.1)';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Add participants to start', centerX, centerY);
+                return;
+            }
+            
+            const sliceAngle = (Math.PI * 2) / participants.length;
+            
+            // Draw slices
+            participants.forEach((participant, index) => {
+                const startAngle = rotation + index * sliceAngle;
+                const endAngle = startAngle + sliceAngle;
+                
+                // Generate colors with HSL for better distribution
+                const hue = (index * 360) / participants.length;
+                ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Border between slices
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw text
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 16px Arial';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+                
+                const text = participant.length > 15 ? participant.substring(0, 15) + '...' : participant;
+                ctx.fillText(text, radius * 0.65, 0);
+                ctx.restore();
+            });
+            
+            // Center circle
+            ctx.fillStyle = 'rgba(10, 10, 30, 0.95)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+        
+        function updateWheel() {
+            drawWheel(currentRotation);
+        }
+
+        function updateRoundInfo() {
+            document.getElementById('currentRound').textContent = currentRound;
+            const prizeInfo = document.getElementById('prizeInfo');
+            
+            if (prizes[currentRound]) {
+                prizeInfo.innerHTML = `${prizes[currentRound].name}<br>Prize: ${prizes[currentRound].prize}`;
+                prizeInfo.style.display = 'block';
+            } else {
+                prizeInfo.textContent = 'Elimination Round';
+            }
+        }
+
+        function spinWheel() {
+            if (isSpinning || participants.length === 0) return;
+            
+            const selectCount = parseInt(document.getElementById('selectCount').value) || 1;
+            if (selectCount > participants.length) {
+                alert('Cannot select more participants than available!');
+                return;
+            }
+            
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+            
+            const canvas = document.getElementById('wheelCanvas');
+            
+            // Pick a random winner
+            const selectedIndex = Math.floor(Math.random() * participants.length);
+            
+            // Calculate the target rotation to land on the selected segment
+            const sliceAngle = (Math.PI * 2) / participants.length;
+            
+            // The pointer is at the top (90 degrees / PI/2)
+            // We want the selected segment to be at the top when we stop
+            // Selected segment center should align with the pointer
+            const segmentCenter = selectedIndex * sliceAngle + (sliceAngle / 2);
+            
+            // Calculate how much we need to rotate to put this segment at the top
+            // Pointer is at PI/2 (top), so we need to rotate so that segmentCenter aligns there
+            const targetOffset = (Math.PI / 2) - segmentCenter;
+            
+            // Add multiple full spins for effect
+            const spins = 5 + Math.random() * 3; // 5-8 full rotations
+            const totalRotation = (Math.PI * 2 * spins) + targetOffset;
+            
+            const duration = 4000; // 4 seconds
+            const startTime = Date.now();
+            const startRotation = currentRotation;
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function (ease-out cubic)
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                currentRotation = startRotation + (totalRotation * easeProgress);
+                drawWheel(currentRotation);
+                
+                if (progress < 1) {
+                    animationFrame = requestAnimationFrame(animate);
+                } else {
+                    // Normalize rotation to 0-2PI range
+                    currentRotation = currentRotation % (Math.PI * 2);
+                    if (currentRotation < 0) currentRotation += Math.PI * 2;
+                    
+                    // Select multiple participants if needed
+                    const selectedParticipants = [];
+                    for (let i = 0; i < selectCount; i++) {
+                        const index = (selectedIndex + i) % participants.length;
+                        selectedParticipants.push(participants[index]);
+                    }
+                    
+                    showResultPopup(selectedParticipants);
+                    addToResults(selectedParticipants);
+                    removeSelectedParticipants(selectedParticipants);
+                    
+                    currentRound++;
+                    updateRoundInfo();
+                    
+                    setTimeout(() => {
+                        isSpinning = false;
+                        document.getElementById('spinBtn').disabled = false;
+                    }, 500);
+                }
+            }
+            
+            animate();
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#feca57', '#ff9ff3', '#54a0ff'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.top = '-10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(confetti);
+                    }, 3000);
+                }, i * 30);
+            }
+        }
+
+        function createBalloons(count = 20) {
+            const balloonEmojis = ['🎈', '🎉', '🎊', '✨', '🌟', '💫', '⭐'];
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const balloon = document.createElement('div');
+                    balloon.className = 'balloon';
+                    balloon.textContent = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+                    balloon.style.left = Math.random() * 100 + 'vw';
+                    balloon.style.bottom = '-50px';
+                    balloon.style.animationDelay = Math.random() * 0.3 + 's';
+                    document.body.appendChild(balloon);
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(balloon);
+                    }, 4000);
+                }, i * 50);
+            }
+        }
+
+        function showResultPopup(selectedParticipants) {
+            const isGrandPrize = currentMode === 'winner' && currentRound === 7;
+            
+            // Trigger animations
+            if (currentMode === 'winner') {
+                createConfetti();
+                createBalloons(isGrandPrize ? 50 : 20);
+            }
+            
+            const popup = document.createElement('div');
+            popup.className = 'result-popup';
+            
+            const content = document.createElement('div');
+            content.className = `popup-content ${currentMode}`;
+            if (isGrandPrize) {
+                content.classList.add('grand-prize');
+            }
+            
+            const title = document.createElement('div');
+            title.className = `popup-title ${currentMode}`;
+            
+            const names = document.createElement('div');
+            names.className = 'popup-names';
+            if (isGrandPrize) {
+                names.classList.add('grand-prize');
+            }
+            names.textContent = selectedParticipants.join(', ');
+            
+            const prize = document.createElement('div');
+            prize.className = 'popup-prize';
+            if (isGrandPrize) {
+                prize.classList.add('grand-prize');
+            }
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'close-popup-btn';
+            closeBtn.textContent = 'Continue';
+            closeBtn.onclick = () => document.body.removeChild(popup);
+            
+            if (currentMode === 'winner') {
+                if (isGrandPrize) {
+                    title.innerHTML = '🏆 GRAND PRIZE WINNER! 🏆';
+                } else {
+                    title.innerHTML = '🎉 WINNER! 🎉';
+                }
+                if (prizes[currentRound]) {
+                    prize.textContent = `Prize: ${prizes[currentRound].prize}`;
+                } else {
+                    prize.textContent = 'Congratulations!';
+                }
+            } else {
+                title.innerHTML = '💀 ELIMINATED! 💀';
+                prize.textContent = 'Better luck next time!';
+            }
+            
+            content.appendChild(title);
+            content.appendChild(names);
+            content.appendChild(prize);
+            content.appendChild(closeBtn);
+            popup.appendChild(content);
+            
+            document.body.appendChild(popup);
+        }
+
+        function addToResults(selectedParticipants) {
+            selectedParticipants.forEach(participant => {
+                const boardItem = document.createElement('div');
+                boardItem.className = 'board-item';
+                
+                if (currentMode === 'winner') {
+                    const winnersBoard = document.getElementById('winnersBoard');
+                    if (prizes[currentRound]) {
+                        boardItem.innerHTML = `${participant} - ${prizes[currentRound].prize}`;
+                    } else {
+                        boardItem.innerHTML = `${participant}`;
+                    }
+                    winnersBoard.appendChild(boardItem);
+                } else {
+                    const losersBoard = document.getElementById('losersBoard');
+                    boardItem.innerHTML = `${participant}`;
+                    losersBoard.appendChild(boardItem);
+                }
+            });
+            
+            // Update counts
+            const winnerCount = document.getElementById('winnersBoard').children.length;
+            const loserCount = document.getElementById('losersBoard').children.length;
+            document.getElementById('winnerCount').textContent = winnerCount;
+            document.getElementById('loserCount').textContent = loserCount;
+        }
+
+        function removeSelectedParticipants(selectedParticipants) {
+            selectedParticipants.forEach(participant => {
+                const index = participants.indexOf(participant);
+                if (index > -1) {
+                    participants.splice(index, 1);
+                }
+            });
+            
+            // Update the input field
+            document.getElementById('participantInput').value = participants.join('\n');
+            updateWheel();
+        }
+
+        function resetGame() {
+            if (confirm('Are you sure you want to reset the game? This will clear all results.')) {
+                participants = [];
+                currentRound = 1;
+                isSpinning = false;
+                selectedResults = [];
+                
+                document.getElementById('participantInput').value = '';
+                document.getElementById('winnersBoard').innerHTML = '';
+                document.getElementById('losersBoard').innerHTML = '';
+                document.getElementById('winnerCount').textContent = '0';
+                document.getElementById('loserCount').textContent = '0';
+                document.getElementById('selectCount').value = '1';
+                document.getElementById('spinBtn').disabled = false;
+                
+                updateWheel();
+                updateRoundInfo();
+                
+                // Reset wheel rotation
+                currentRotation = 0;
+                drawWheel(currentRotation);
+            }
+        }
+
+        // Add some sample data for demo
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const sampleData = "Alice\nBob\nCharlie\nDiana\nEve\nFrank\nGrace\nHenry";
+                document.getElementById('participantInput').value = sampleData;
+                updateParticipants();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
