@@ -398,22 +398,29 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
             backdrop-filter: blur(10px);
+            padding: 40px;
         }
 
         .popup-content {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             border: 3px solid #00ffff;
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 30px;
+            padding: 60px 80px;
             text-align: center;
-            max-width: 400px;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            width: 90%;
+            max-width: 1200px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
             animation: popupAppear 0.5s ease-out;
         }
 
@@ -428,44 +435,45 @@
         }
 
         .popup-title {
-            font-size: 2.5em;
-            margin-bottom: 20px;
+            font-size: 4em;
             font-weight: bold;
+            margin: 0;
         }
 
         .popup-title.winner {
             color: #00ff00;
-            text-shadow: 0 0 30px #00ff00;
         }
 
         .popup-title.loser {
             color: #ff4444;
-            text-shadow: 0 0 30px #ff4444;
         }
 
         .popup-names {
-            font-size: 1.5em;
-            margin-bottom: 20px;
+            font-size: 2.5em;
             color: #ffffff;
+            line-height: 1.4;
+            margin: 0;
+            font-weight: 600;
         }
 
         .popup-prize {
-            font-size: 1.2em;
+            font-size: 2em;
             color: #ffd700;
-            text-shadow: 0 0 15px #ffd700;
-            margin-bottom: 20px;
+            margin: 0;
+            font-weight: bold;
         }
 
         .close-popup-btn {
-            padding: 12px 25px;
+            padding: 20px 60px;
             background: linear-gradient(45deg, #4a90e2, #357abd);
             border: none;
-            border-radius: 25px;
+            border-radius: 30px;
             color: #fff;
-            font-size: 16px;
+            font-size: 1.8em;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-top: 20px;
         }
 
         .close-popup-btn:hover {
@@ -526,8 +534,8 @@
 
         /* Special 1st Prize Popup */
         .popup-content.grand-prize {
-            border: 5px solid #ffd700;
-            box-shadow: 0 0 80px rgba(255, 215, 0, 0.8);
+            border: 8px solid #ffd700;
+            box-shadow: 0 0 100px rgba(255, 215, 0, 0.9);
             animation: grandPrizeAppear 1s ease-out, grandPrizePulse 2s ease-in-out infinite;
         }
 
@@ -555,7 +563,7 @@
         }
 
         .popup-names.grand-prize {
-            font-size: 3em;
+            font-size: 4.5em;
             background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -573,7 +581,7 @@
         }
 
         .popup-prize.grand-prize {
-            font-size: 1.8em;
+            font-size: 2.5em;
             animation: prizeShine 2s ease-in-out infinite;
         }
 
@@ -633,6 +641,12 @@
     </style>
 </head>
 <body>
+    <!-- Background music player -->
+    <audio id="spinMusic" preload="auto">
+        <source src="nhac.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
     <div class="bubbles">
         <div class="bubble"></div>
         <div class="bubble"></div>
@@ -711,6 +725,8 @@
         let selectedResults = [];
         let currentRotation = 0;
         let animationFrame = null;
+        let bgMusic = null;
+        let isMusicPlaying = false;
 
         const prizes = {
             4: { name: '5th Prize Winner', prize: '100k ZaloPay' },
@@ -719,10 +735,79 @@
             7: { name: '1st Prize Winner', prize: 'AirPod 4' }
         };
 
+        // Simple and reliable music control
+        function playMusic() {
+            console.log('🎵 Attempting to play music...');
+            
+            // Get the audio element
+            if (!bgMusic) {
+                bgMusic = document.getElementById('spinMusic');
+            }
+            
+            if (!bgMusic) {
+                console.error('❌ Audio element not found!');
+                return;
+            }
+            
+            // Stop first if already playing
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                bgMusic.currentTime = 0;
+            }
+            
+            // Set properties
+            bgMusic.loop = true;
+            bgMusic.volume = 0.6;
+            
+            // Play with promise handling
+            const playPromise = bgMusic.play();
+            
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        isMusicPlaying = true;
+                        console.log('✅ Music started playing');
+                    })
+                    .catch(error => {
+                        console.error('❌ Failed to play music:', error);
+                        isMusicPlaying = false;
+                    });
+            }
+        }
+
+        function stopMusic() {
+            console.log('🛑 Stopping music...');
+            
+            if (!bgMusic) {
+                bgMusic = document.getElementById('spinMusic');
+            }
+            
+            if (bgMusic && isMusicPlaying) {
+                bgMusic.pause();
+                bgMusic.currentTime = 0;
+                isMusicPlaying = false;
+                console.log('✅ Music stopped');
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateModeButtons();
             updateRoundInfo();
+            
+            // Initialize audio on first user interaction
+            document.body.addEventListener('click', function initAudio() {
+                if (!bgMusic) {
+                    bgMusic = document.getElementById('spinMusic');
+                    if (bgMusic) {
+                        // Load the audio
+                        bgMusic.load();
+                        console.log('🎵 Audio initialized');
+                        // Remove this listener after first click
+                        document.body.removeEventListener('click', initAudio);
+                    }
+                }
+            }, { once: true });
             
             // Mode toggle functionality
             document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -806,8 +891,11 @@
             const sliceAngle = (Math.PI * 2) / participants.length;
             
             // Draw slices
+            // Pointer is at top (270 degrees in standard coordinates, -PI/2 in our system)
+            // We draw segments clockwise starting from the right (0 degrees)
             participants.forEach((participant, index) => {
-                const startAngle = rotation + index * sliceAngle;
+                // Start angle for this segment
+                const startAngle = rotation + (index * sliceAngle);
                 const endAngle = startAngle + sliceAngle;
                 
                 // Generate colors with HSL for better distribution
@@ -879,37 +967,89 @@
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
             
-            const canvas = document.getElementById('wheelCanvas');
+            // Play music when spin starts
+            playMusic();
             
-            // Pick a random winner
+            // Pick a random winner FIRST
             const selectedIndex = Math.floor(Math.random() * participants.length);
+            const selectedParticipants = [];
+            for (let i = 0; i < selectCount; i++) {
+                const index = (selectedIndex + i) % participants.length;
+                selectedParticipants.push(participants[index]);
+            }
             
-            // Calculate the target rotation to land on the selected segment
+            console.log('Selected:', selectedParticipants[0], 'at index', selectedIndex);
+            
+            // Calculate angles
             const sliceAngle = (Math.PI * 2) / participants.length;
             
-            // The pointer is at the top (90 degrees / PI/2)
-            // We want the selected segment to be at the top when we stop
-            // Selected segment center should align with the pointer
-            const segmentCenter = selectedIndex * sliceAngle + (sliceAngle / 2);
+            // MATH:
+            // Pointer is at top = -PI/2 radians (270 degrees, pointing up)
+            // Segment i is drawn from: (rotation + i * sliceAngle) to (rotation + (i+1) * sliceAngle)
+            // Center of segment i is at: rotation + i * sliceAngle + sliceAngle/2
+            // 
+            // We want segment center at pointer position:
+            // rotation + selectedIndex * sliceAngle + sliceAngle/2 = -PI/2
+            // rotation = -PI/2 - selectedIndex * sliceAngle - sliceAngle/2
             
-            // Calculate how much we need to rotate to put this segment at the top
-            // Pointer is at PI/2 (top), so we need to rotate so that segmentCenter aligns there
-            const targetOffset = (Math.PI / 2) - segmentCenter;
+            const pointerAngle = -Math.PI / 2;
+            const targetRotation = pointerAngle - (selectedIndex * sliceAngle) - (sliceAngle / 2);
             
-            // Add multiple full spins for effect
-            const spins = 5 + Math.random() * 3; // 5-8 full rotations
-            const totalRotation = (Math.PI * 2 * spins) + targetOffset;
+            console.log('Target rotation:', targetRotation);
             
-            const duration = 4000; // 4 seconds
+            // Calculate duration based on prize level for winner mode
+            let duration = 4000; // Default 4 seconds
+            let extraSpins = 5 + Math.floor(Math.random() * 4); // 5-8 full rotations
+            
+            if (currentMode === 'winner' && prizes[currentRound]) {
+                // Progressive duration for winner prizes
+                if (currentRound === 4) {
+                    duration = 5000; // 5th prize: 5s
+                    extraSpins = 6;
+                } else if (currentRound === 5) {
+                    duration = 7000; // 4th prize: 7s
+                    extraSpins = 8;
+                } else if (currentRound === 6) {
+                    duration = 9000; // 3rd prize: 9s
+                    extraSpins = 10;
+                } else if (currentRound === 7) {
+                    duration = 13000; // 1st prize: 13s (most dramatic!)
+                    extraSpins = 15;
+                }
+            }
+            
+            // Calculate shortest path to target
+            let rotationDelta = targetRotation - currentRotation;
+            
+            // Add the extra spins
+            const totalRotation = rotationDelta + (extraSpins * Math.PI * 2);
+            
             const startTime = Date.now();
             const startRotation = currentRotation;
+            
+            // Add pulsing effect to wheel during spin
+            const canvas = document.getElementById('wheelCanvas');
+            let pulseInterval;
+            if (currentMode === 'winner' && prizes[currentRound]) {
+                pulseInterval = setInterval(() => {
+                    const scale = 1 + Math.sin(Date.now() / 200) * 0.02;
+                    canvas.style.transform = `scale(${scale})`;
+                }, 50);
+            }
             
             function animate() {
                 const elapsed = Date.now() - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
-                // Easing function (ease-out cubic)
-                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                // Enhanced easing function for dramatic effect
+                let easeProgress;
+                if (currentMode === 'winner' && prizes[currentRound]) {
+                    // More dramatic easing for prizes - fast start, very slow end
+                    easeProgress = 1 - Math.pow(1 - progress, 4);
+                } else {
+                    // Normal easing (ease-out cubic)
+                    easeProgress = 1 - Math.pow(1 - progress, 3);
+                }
                 
                 currentRotation = startRotation + (totalRotation * easeProgress);
                 drawWheel(currentRotation);
@@ -917,28 +1057,38 @@
                 if (progress < 1) {
                     animationFrame = requestAnimationFrame(animate);
                 } else {
-                    // Normalize rotation to 0-2PI range
-                    currentRotation = currentRotation % (Math.PI * 2);
-                    if (currentRotation < 0) currentRotation += Math.PI * 2;
-                    
-                    // Select multiple participants if needed
-                    const selectedParticipants = [];
-                    for (let i = 0; i < selectCount; i++) {
-                        const index = (selectedIndex + i) % participants.length;
-                        selectedParticipants.push(participants[index]);
+                    // Clear pulse effect
+                    if (pulseInterval) {
+                        clearInterval(pulseInterval);
+                        canvas.style.transform = 'scale(1)';
                     }
                     
-                    showResultPopup(selectedParticipants);
-                    addToResults(selectedParticipants);
-                    removeSelectedParticipants(selectedParticipants);
+                    // Snap to exact target
+                    currentRotation = targetRotation;
+                    drawWheel(currentRotation);
                     
-                    currentRound++;
-                    updateRoundInfo();
+                    console.log('Final rotation:', currentRotation);
+                    console.log('Should show:', participants[selectedIndex]);
+                    
+                    // Add dramatic pause before announcement for big prizes
+                    const pauseDuration = (currentMode === 'winner' && currentRound === 7) ? 1000 : 300;
                     
                     setTimeout(() => {
-                        isSpinning = false;
-                        document.getElementById('spinBtn').disabled = false;
-                    }, 500);
+                        // Stop music when result is announced
+                        stopMusic();
+                        
+                        showResultPopup(selectedParticipants);
+                        addToResults(selectedParticipants);
+                        removeSelectedParticipants(selectedParticipants);
+                        
+                        currentRound++;
+                        updateRoundInfo();
+                        
+                        setTimeout(() => {
+                            isSpinning = false;
+                            document.getElementById('spinBtn').disabled = false;
+                        }, 500);
+                    }, pauseDuration);
                 }
             }
             
